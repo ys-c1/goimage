@@ -49,7 +49,7 @@ func LoadPGM(path string) (*Gray, error) {
 	pos := 0
 	tokens := 0
 	var vals []int
-	for tokens < 3 && pos < len(data) {
+	for tokens < 4 && pos < len(data) {
 		for pos < len(data) && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r') {
 			pos++
 		}
@@ -71,7 +71,7 @@ func LoadPGM(path string) (*Gray, error) {
 		}
 		tokens++
 	}
-	if len(vals) != 2 {
+	if len(vals) != 3 {
 		return nil, ErrHeader
 	}
 	for pos < len(data) && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r') {
