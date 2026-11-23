@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
+	"strings"
 )
 
 type Gray struct {
@@ -12,9 +14,10 @@ type Gray struct {
 }
 
 var (
-	ErrSize     = errors.New("画幅必须为正")
-	ErrEmpty    = errors.New("空图不能导出")
-	ErrLevels   = errors.New("色阶必须在一到二百五十六之间")
+	ErrSize   = errors.New("画幅必须为正")
+	ErrEmpty  = errors.New("空图不能导出")
+	ErrLevels = errors.New("色阶必须在一到二百五十六之间")
+	ErrHeader = errors.New("PGM 头非法")
 )
 
 func New(w, h int) (*Gray, error) {
@@ -43,15 +46,45 @@ func LoadPGM(path string) (*Gray, error) {
 	if err != nil {
 		return nil, err
 	}
-	var w, h, maxv int
-	if _, err := fmt.Sscanf(string(data), "P5 %d %d %d", &w, &h, &maxv); err != nil {
-		return nil, err
+	pos := 0
+	tokens := 0
+	var vals []int
+	for tokens < 3 && pos < len(data) {
+		for pos < len(data) && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r') {
+			pos++
+		}
+		start := pos
+		for pos < len(data) && data[pos] != ' ' && data[pos] != '\n' && data[pos] != '\r' {
+			pos++
+		}
+		tok := string(data[start:pos])
+		if tokens == 0 {
+			if strings.TrimSpace(tok) != "P5" {
+				return nil, ErrHeader
+			}
+		} else {
+			n, err := strconv.Atoi(tok)
+			if err != nil {
+				return nil, ErrHeader
+			}
+			vals = append(vals, n)
+		}
+		tokens++
 	}
-	header := len(fmt.Sprintf("P5\n%d %d\n%d\n", w, h, maxv))
+	if len(vals) != 2 {
+		return nil, ErrHeader
+	}
+	for pos < len(data) && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r') {
+		pos++
+	}
+	w, h := vals[0], vals[1]
 	g, err := New(w, h)
 	if err != nil {
 		return nil, err
 	}
-	copy(g.Pix, data[header:])
+	if len(data)-pos < w*h {
+		return nil, ErrHeader
+	}
+	copy(g.Pix, data[pos:pos+w*h])
 	return g, nil
 }
