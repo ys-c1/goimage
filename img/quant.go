@@ -8,16 +8,13 @@ func Quantize(g *Gray, levels int) (*Gray, error) {
 	if err != nil {
 		return nil, err
 	}
-	step := 255 / (levels - 1)
-	if levels == 1 {
-		step = 255
-	}
-	for i, v := range g.Pix {
-		q := int(v) / step * step
-		if q > 255 {
-			q = 255
+	out.Pix = append(out.Pix[:0], g.Pix...)
+	if levels < 256 {
+		pal := paletteForLevels(levels)
+		step := paletteStep(levels)
+		for i, v := range g.Pix {
+			out.Pix[i] = pal[nearestPaletteIndex(pal, float64(v), step)]
 		}
-		out.Pix[i] = uint8(q)
 	}
 	return out, nil
 }
