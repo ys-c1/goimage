@@ -56,3 +56,24 @@ func TestNewRejectsZero(t *testing.T) {
 		t.Fatal("宽度为零应报错")
 	}
 }
+
+func TestLoadPGMLeadingWhitespacePixel(t *testing.T) {
+	// 像素数据首字节可能是空白值(空格/换行/回车),加载时不得吞掉。
+	for _, first := range []uint8{9, 10, 13, 32} {
+		g, _ := New(3, 1)
+		g.Pix = []uint8{first, 100, 200}
+		p := filepath.Join(t.TempDir(), "w.pgm")
+		if err := g.SavePGM(p); err != nil {
+			t.Fatal(err)
+		}
+		got, err := LoadPGM(p)
+		if err != nil {
+			t.Fatalf("首像素 %d: %v", first, err)
+		}
+		for i := range g.Pix {
+			if got.Pix[i] != g.Pix[i] {
+				t.Fatalf("首像素 %d: 第 %d 像素不一致 %d != %d", first, i, got.Pix[i], g.Pix[i])
+			}
+		}
+	}
+}

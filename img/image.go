@@ -74,7 +74,11 @@ func LoadPGM(path string) (*Gray, error) {
 	if len(vals) != 3 {
 		return nil, ErrHeader
 	}
-	for pos < len(data) && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r') {
+	// maxval 后只隔一个空白符(兼容 \r\n);像素数据本身可能是空白值,不能多吞。
+	if pos < len(data) && (data[pos] == ' ' || data[pos] == '\n' || data[pos] == '\r') {
+		if data[pos] == '\r' && pos+1 < len(data) && data[pos+1] == '\n' {
+			pos++
+		}
 		pos++
 	}
 	w, h := vals[0], vals[1]
